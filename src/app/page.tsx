@@ -1,101 +1,146 @@
-import Image from "next/image";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client"
+import { IconButton, Menu, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
+import { useEffect, useState } from "react";
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import FormModal from "./Components/FormModal";
+import { deleteBlog, getListBlog } from "./apis";
+import AddIcon from '@mui/icons-material/Add';
+import CircularProgress from '@mui/material/CircularProgress';
+import Link from "next/link";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [title, setTitle] = useState("Create")
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [blog, setBlog] = useState<any>([])
+  const [loading, setLoading] = useState<boolean>(false)
+  const [deleteLoading, setDeleteLoading] = useState<boolean>(false)
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [openModal, setOpenModal] = useState(false);
+  const handleOpenModal = () => { setOpenModal(true); setTitle("Create"); };
+  const handleCloseModal = () => setOpenModal(false);
+  const open = Boolean(anchorEl);
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  const deleteAction = async (id: string) => {
+    try {
+      setDeleteLoading(true)
+      await deleteBlog(id);
+      setBlog((prev: any) => prev.filter((i: any) => i.id != id))
+    } catch (error) {
+      console.error("Error fetching blog list:", error);
+      throw error;
+    } finally {
+      setDeleteLoading(false)
+      handleClose()
+    }
+  }
+
+
+  const fetchData = async () => {
+    setLoading(true)
+    try {
+      const data = await getListBlog();
+      setBlog(data)
+    } catch (error) {
+      console.log(error)
+    } finally {
+      setLoading(false);
+      handleClose()
+    }
+  };
+  useEffect(() => {
+
+    fetchData();
+  }, []);
+
+  return (
+    <div className="w-full h-screen flex-col flex items-center justify-center">
+      <IconButton onClick={() => { setTitle("Create"); setOpenModal(true) }}>
+        <AddIcon />
+      </IconButton>
+      <div className="flex items-center justify-center min-w-[30%] border shadow-md max-w-[70%] max-h-[70%]">
+        {loading ?
+          <CircularProgress />
+          :
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>No</TableCell>
+                  <TableCell>Title</TableCell>
+                  <TableCell className="w-[10%]"></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {blog.length > 0 &&
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  blog.map((i: any, index: number) =>
+                    <TableRow key={index}>
+                      <TableCell>
+                        {index + 1}
+                      </TableCell>
+                      <TableCell>
+                        <Link href={"/detail-blog/" + i.id}>
+                          {i.title}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <IconButton
+
+                          onClick={handleClick}
+                        >
+                          <MoreHorizIcon />
+                        </IconButton>
+                        <Menu
+                          id="basic-menu"
+                          anchorEl={anchorEl}
+                          open={open}
+                          onClose={handleClose}
+                          MenuListProps={{
+                            'aria-labelledby': 'basic-button',
+                          }}
+                        >
+                          <MenuItem onClick={handleOpenModal} className="flex gap-3">
+                            <VisibilityIcon color="primary" />
+                            <span>View</span>
+                          </MenuItem>
+                          <MenuItem onClick={() => { handleOpenModal(); setTitle(i.id) }} className="flex gap-3">
+                            <EditIcon color="warning" />
+                            <span>Edit</span>
+                          </MenuItem>
+                          <MenuItem onClick={() => deleteAction(i.id)} className="flex gap-3">
+                            {deleteLoading ?
+                              <div className="flex w-full items-center justify-center">
+                                <CircularProgress size={18} />
+                              </div>
+                              :
+                              <>
+                                <DeleteIcon color="error" />
+                                <span>Delete</span></>
+                            }
+                          </MenuItem>
+                        </Menu>
+                      </TableCell>
+                    </TableRow>
+
+
+                  )
+                }
+              </TableBody>
+            </Table>
+          </TableContainer>
+        }
+      </div>
+      <FormModal open={openModal} handleCloseModal={handleCloseModal} title={title} setBlog={setBlog} getListData={fetchData} />
     </div>
   );
 }
